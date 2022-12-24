@@ -1,2 +1,2 @@
-# Projects from course
+# Projects from course gophercises.com
 
