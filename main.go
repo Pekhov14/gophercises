@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
 	csvFileName := flag.String("csv", "problems.csv", "format of question - answer")
+	timeLimit := flag.Int("limit", 30, "The time limit for quiz in seconds")
 	flag.Parse()
 
 	file, err := os.Open(*csvFileName)
@@ -26,14 +28,30 @@ func main() {
 
 	problems := parseLines(lines)
 
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
 	correct := 0
-	for i, p := range problems {
-		fmt.Printf("Problem #%d: %s = \n", i+1, p.q)
-		var answer string
-		fmt.Scanf("%s\n", &answer)
 
-		if answer == p.a {
-			correct++
+	// Ярлык цикла
+problemLoop:
+	for i, p := range problems {
+		fmt.Printf("Problem #%d: %s = ", i+1, p.q)
+
+		answerCh := make(chan string) // Канал с ответами
+		// Процедура go, вызываем анонимную func
+		go func() {
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerCh <- answer
+		}()
+
+		select {
+		case <-timer.C:
+			fmt.Println()
+			break problemLoop
+		case answer := <-answerCh:
+			if answer == p.a {
+				correct++
+			}
 		}
 	}
 
